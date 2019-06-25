@@ -14,7 +14,7 @@ func init() {
 }
 
 func main() {
-	conn, err := tls.Dial("tcp", "cloud.ordinarius-fectum.net:443", &tls.Config{})
+	conn, err := tls.Dial("tcp", "www.google.com:443", &tls.Config{})
 	if err != nil {
 		log.Fatalf("client: dial: %s", err)
 	}
