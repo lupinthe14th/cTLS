@@ -33,12 +33,3 @@ func statePeerCertificateExpireDate(host, port string) (expireTime time.Time, er
 	log.Debugln("client: exiting")
 	return expireTime, nil
 }
-
-func main() {
-	expireTime, err := statePeerCertificateExpireDate("www.google.com", "443")
-	if err != nil {
-		log.Panicln(err)
-	}
-	expireJSTTime := expireTime.In(time.FixedZone("Asia/Tokyo", 9*60*60))
-	fmt.Println("Peer Certificates: expire time: ", expireJSTTime)
-}
