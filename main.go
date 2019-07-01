@@ -13,7 +13,7 @@ func init() {
 	os.Setenv("GODEBUG", os.Getenv("GODEBUG")+",tls13=1")
 }
 
-func statePeerCertificateExpireDate(host string, port uint32) (expireTime time.Time, err error) {
+func statePeerCertificateExpireDate(host, port string) (expireTime time.Time, err error) {
 	conn, err := tls.Dial("tcp", fmt.Sprint(host, ":", port), &tls.Config{})
 	if err != nil {
 		log.Errorf("client: dial: %s", err)
@@ -35,7 +35,7 @@ func statePeerCertificateExpireDate(host string, port uint32) (expireTime time.T
 }
 
 func main() {
-	expireTime, err := statePeerCertificateExpireDate("www.google.com", 443)
+	expireTime, err := statePeerCertificateExpireDate("www.google.com", "443")
 	if err != nil {
 		log.Panicln(err)
 	}
