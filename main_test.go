@@ -11,6 +11,7 @@ func TestStatePeerCertificateExpireDate(t *testing.T) {
 		port string
 	}{
 		{host: "www.google.com", port: "443"},
+		{host: "smtp.gmail.com", port: "587"},
 	}
 
 	for _, tt := range tests {
