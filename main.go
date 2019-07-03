@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/tls"
 	"fmt"
+	"net"
 	"net/smtp"
 	"os"
 	"sync"
@@ -16,7 +17,15 @@ func init() {
 }
 
 func startTLSConnectionState(host, port string) (state tls.ConnectionState, err error) {
-	conn, err := smtp.Dial(fmt.Sprint(host, ":", port))
+	addr := fmt.Sprint(host, ":", port)
+	// Dial the tcp connection
+	_, err = net.DialTimeout("tcp", addr, 10*time.Second)
+	if err != nil {
+		log.Errorf("net dial: %s", err)
+		return state, err
+	}
+	// Dial the SMTP server
+	conn, err := smtp.Dial(addr)
 	if err != nil {
 		log.Errorf("smtp: dial: %s", err)
 		return state, err
@@ -28,7 +37,16 @@ func startTLSConnectionState(host, port string) (state tls.ConnectionState, err 
 }
 
 func tlsConnectionState(host, port string) (state tls.ConnectionState, err error) {
-	conn, err := tls.Dial("tcp", fmt.Sprint(host, ":", port), &tls.Config{})
+	addr := fmt.Sprint(host, ":", port)
+	// Dial the tcp connection
+	_, err = net.DialTimeout("tcp", addr, 10*time.Second)
+	if err != nil {
+		log.Errorf("net dial: %s", err)
+		return state, err
+	}
+
+	// Dial the tls connection
+	conn, err := tls.Dial("tcp", addr, &tls.Config{})
 	if err != nil {
 		log.Errorf("tls: dial: %s", err)
 		return state, err
@@ -48,6 +66,7 @@ func statePeerCertificateExpireDate(host, port string) (expireTime time.Time, er
 		state, err = startTLSConnectionState(host, port)
 		if err != nil {
 			log.Errorf("startTLS connection state: %s", err)
+			return expireTime, err
 		}
 		log.Debugf("startTLS connection state: %v", state)
 	default:
@@ -55,6 +74,7 @@ func statePeerCertificateExpireDate(host, port string) (expireTime time.Time, er
 		state, err = tlsConnectionState(host, port)
 		if err != nil {
 			log.Errorf("TLS connection state: %s", err)
+			return expireTime, err
 		}
 		log.Debugf("TLS connection state: %v", state)
 	}
