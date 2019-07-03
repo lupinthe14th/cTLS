@@ -3,12 +3,23 @@ language: go
 go:
   - 1.12.x
   - master
+  - tip
 os:
   - linux
   - osx
 dist: trusty
 sudo: false
+before_install:
+  - go get golang.org/x/tools/cmd/cover
+  - go get github.com/mattn/goveralls
 install: true
 script:
   - env GO111MODULE=on go build
-  - env GO111MODULE=on go test
+  - env GO111MODULE=on go test -v -covermode=count -coverprofile=coverage.out
+  - $HOME/gopath/bin/goveralls
+    -coverprofile=coverage.out
+    -service=travis-ci
+    -repotoken $COVERALLS_TOKEN
+env:
+  global:
+    secure: "R+IoGNSttX4tTkDPha5gQOo+Hn3TfjzkWMXfGdu6r1XPYD5Fs8o+aw7rGiNYMVa40oxP54ilW7nlmQUNx/vJytVZWlyWWRfeadNi8VVdpET2BqaOR7U2u/dCHIUZz6FdbXAPMV4XS5blaHYKcQ5zltLb2AbRURFymNkjRlzsLTm8vikjxGPQBYG4LHOE0/piEWgrYHkIMxLlzXAwwnq0A7MeJ8X7qRDdXKIYWYPKhB/s/20h6XkJKELV6shZG21Jgk4dLySrvFSzogtVENWxy575n4N4dIylGBlfdmMqZAqZeiFdnIXYwKk1IoZtR4k1hYsgy2yky1nKGlDobZ+Ihmu553cB5tZo+GhBKzrelBkbxjcvV/P+e1tJK5snQeRNJVQdy2zPvGAHPJQetR+NhGvhb26qqyWZuKtVOv9G09Nh3dVNPIAkobruEpIE0f5wmt1Wt4B3TEqN+FhydQoEhCACacx8Q9B6/m2PVmHfT6SBUsMU/MD++Ztv+CGQEIkHwEIcAneZhoFuP7ZBGwmqlu1Us0HZ9x5GwDMxlLQaVfQJSHtUKL+A5MHXU+kVnOF/KzEsH/jpk+SJoUHUGRngmTi/Im39DcJznV0eNeHVGsBuoY4L+2sLXdqkd+i9w9BzVfY4SDXnechvWtjHIVs51DXJXumXTv3EAzgE0KE6I7Q="
