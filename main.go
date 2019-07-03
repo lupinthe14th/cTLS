@@ -20,6 +20,7 @@ func startTLSConnectionState(host, port string) (state tls.ConnectionState, err 
 		log.Errorf("smtp: dial: %s", err)
 		return state, err
 	}
+	defer conn.Close()
 	conn.StartTLS(&tls.Config{ServerName: host})
 	state, _ = conn.TLSConnectionState()
 	return state, nil
@@ -69,10 +70,21 @@ func statePeerCertificateExpireDate(host, port string) (expireTime time.Time, er
 }
 
 func main() {
-	expireTime, err := statePeerCertificateExpireDate("www.google.com", "443")
-	if err != nil {
-		log.Panicln(err)
+	type addr struct {
+		host string
+		port string
 	}
-	expireJSTTime := expireTime.In(time.FixedZone("Asia/Tokyo", 9*60*60))
-	fmt.Println("Peer Certificates: expire time: ", expireJSTTime)
+	var addrs = []addr{
+		{host: "www.google.com", port: "443"},
+		{host: "smtp.gmail.com", port: "587"},
+	}
+
+	for _, addr := range addrs {
+		expireTime, err := statePeerCertificateExpireDate(addr.host, addr.port)
+		if err != nil {
+			log.Panicln(err)
+		}
+		expireJSTTime := expireTime.In(time.FixedZone("Asia/Tokyo", 9*60*60))
+		fmt.Println("Peer Certificates: expire time: ", expireJSTTime)
+	}
 }
