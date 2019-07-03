@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/smtp"
 	"os"
+	"sync"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -79,12 +80,18 @@ func main() {
 		{host: "smtp.gmail.com", port: "587"},
 	}
 
-	for _, addr := range addrs {
-		expireTime, err := statePeerCertificateExpireDate(addr.host, addr.port)
-		if err != nil {
-			log.Panicln(err)
-		}
-		expireJSTTime := expireTime.In(time.FixedZone("Asia/Tokyo", 9*60*60))
-		fmt.Println("Peer Certificates: expire time: ", expireJSTTime)
+	var wg sync.WaitGroup
+	for i, a := range addrs {
+		wg.Add(1)
+		go func(i int, a addr) {
+			defer wg.Done()
+			expireTime, err := statePeerCertificateExpireDate(a.host, a.port)
+			if err != nil {
+				log.Panicln(err)
+			}
+			expireJSTTime := expireTime.In(time.FixedZone("Asia/Tokyo", 9*60*60))
+			fmt.Println(i, ": Peer Certificates: expire time:", expireJSTTime)
+		}(i, a)
 	}
+	wg.Wait()
 }
