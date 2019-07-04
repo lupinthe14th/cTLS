@@ -2,23 +2,32 @@ package main
 
 import (
 	"testing"
-	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestStatePeerCertificateExpireDate(t *testing.T) {
 	var tests = []struct {
+		name string
 		host string
 		port string
+		err  bool
 	}{
-		{host: "www.google.com", port: "443"},
+		{name: "No Error", host: "www.google.com", port: "443", err: false},
+		{name: "No Error", host: "smtp.gmail.com", port: "587", err: false},
+		{name: "Error", host: "www.google.com", port: "80", err: true},
+		{name: "Error", host: "smtp.gmail.com", port: "25", err: true},
 	}
 
 	for _, tt := range tests {
-		expireTime, err := statePeerCertificateExpireDate(tt.host, tt.port)
-		if err != nil {
-			t.Error(err)
-		}
-		expireJSTTime := expireTime.In(time.FixedZone("Asia/Tokyo", 9*60*60))
-		t.Logf("Peer Certificates: expire time: %+v", expireJSTTime)
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := statePeerCertificateExpireDate(tt.host, tt.port)
+			if !tt.err {
+				assert.NoError(t, err)
+			}
+			if tt.err {
+				assert.Error(t, err)
+			}
+		})
 	}
 }
