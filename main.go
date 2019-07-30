@@ -6,14 +6,36 @@ import (
 	"net"
 	"net/smtp"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
+	"github.com/infobloxopen/atlas-app-toolkit/gorm/resource"
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
+	"github.com/tcvem/backend/cmd/client"
+	"github.com/tcvem/backend/pkg/pb"
 )
 
 func init() {
 	os.Setenv("GODEBUG", os.Getenv("GODEBUG")+",tls13=1")
+	pflag.Parse()
+	viper.BindPFlags(pflag.CommandLine)
+	viper.AutomaticEnv()
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	viper.AddConfigPath(viper.GetString("config.source"))
+	if viper.GetString("config.file") != "" {
+		log.Printf("Serving from configuration file: %s", viper.GetString("config.file"))
+		viper.SetConfigName(viper.GetString("config.file"))
+		if err := viper.ReadInConfig(); err != nil {
+			log.Fatalf("cannot load configuration: %v", err)
+		}
+	} else {
+		log.Printf("Serving from default values, environment variables, and/or flags")
+	}
+	resource.RegisterApplication(viper.GetString("app.id"))
+	resource.SetPlural()
 }
 
 func startTLSConnectionState(host, port string) (state tls.ConnectionState, err error) {
@@ -90,28 +112,36 @@ func statePeerCertificateExpireDate(host, port string) (expireTime time.Time, er
 	return expireTime, nil
 }
 
-func main() {
-	type addr struct {
-		host string
-		port string
-	}
-	var addrs = []addr{
-		{host: "www.google.com", port: "443"},
-		{host: "smtp.gmail.com", port: "587"},
-	}
-
+func checkStatePeerCertificateExpireDate(addrs *pb.ListCertficateResponse) error {
 	var wg sync.WaitGroup
-	for i, a := range addrs {
+	for i, a := range addrs.Results {
 		wg.Add(1)
-		go func(i int, a addr) {
+		go func(i int, a *pb.Certficate) {
 			defer wg.Done()
-			expireTime, err := statePeerCertificateExpireDate(a.host, a.port)
+			expireTime, err := statePeerCertificateExpireDate(a.Host, a.Port)
 			if err != nil {
-				log.Panicln(err)
+				log.Error(err)
 			}
 			expireJSTTime := expireTime.In(time.FixedZone("Asia/Tokyo", 9*60*60))
 			fmt.Println(i, ": Peer Certificates: expire time:", expireJSTTime)
 		}(i, a)
 	}
 	wg.Wait()
+	return nil
+}
+
+func main() {
+	// Set up a connection to the server.
+	address := fmt.Sprintf("%s:%s", viper.GetString("server.address"), viper.GetString("server.port"))
+
+	cc, err := client.NewTcvemClient(address)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	addrs, err := cc.GetListCertficate()
+	if err != nil {
+		log.Panic(err)
+	}
+	checkStatePeerCertificateExpireDate(addrs)
 }
