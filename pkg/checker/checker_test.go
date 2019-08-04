@@ -1,10 +1,13 @@
-package main
+package checker
 
 import (
 	"testing"
 
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
+
+var logger = logrus.New()
 
 func TestStatePeerCertificateExpireDate(t *testing.T) {
 	var tests = []struct {
@@ -21,7 +24,7 @@ func TestStatePeerCertificateExpireDate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := statePeerCertificateExpireDate(tt.host, tt.port)
+			_, err := statePeerCertificateExpireDate(logger, tt.host, tt.port)
 			if !tt.err {
 				assert.NoError(t, err)
 			}
