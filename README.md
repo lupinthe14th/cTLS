@@ -1,4 +1,4 @@
-# bot
+# cbot
 Check TLS Certificates expire bot
 
 [![Go Documentation](http://img.shields.io/badge/go-documentation-blue.svg?style=flat-square)][godoc]
